@@ -53,7 +53,9 @@ final class OneSignalTransport extends AbstractTransport
 
     public function supports(MessageInterface $message): bool
     {
-        return $message instanceof PushMessage && (null !== $this->defaultRecipientId || ($message->getOptions() instanceof OneSignalOptions && null !== $message->getOptions()->getRecipientId()));
+        return $message instanceof PushMessage && (null !== $this->defaultRecipientId ||
+                ($message->getOptions() instanceof OneSignalOptions && (null !== $message->getOptions()->getRecipientId() ||
+                        (isset($message->getOptions()->toArray()["include_external_user_ids"]) && count($message->getOptions()->toArray()["include_external_user_ids"]) > 0))));
     }
 
     /**
