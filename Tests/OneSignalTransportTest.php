@@ -155,4 +155,32 @@ final class OneSignalTransportTest extends TransportTestCase
 
         $this->assertSame('b98881cc-1e94-4366-bbd9-db8f3429292b', $sentMessage->getMessageId());
     }
+
+    public function testSendWithExternalUsers()
+    {
+        $response = $this->createMock(ResponseInterface::class);
+        $response->expects($this->exactly(2))
+            ->method('getStatusCode')
+            ->willReturn(200);
+        $response->expects($this->once())
+            ->method('getContent')
+            ->willReturn(json_encode(['id' => 'b98881cc-1e94-4366-bbd9-db8f3429292b', 'recipients' => 1, 'external_id' => null]));
+
+        $expectedBody = json_encode(['include_external_user_ids' => ['example_user_id'], 'app_id' => '9fb175f0-0b32-4e99-ae97-bd228b9eb246', "include_player_ids" => [null], 'headings' => ['en' => 'Hello'], 'contents' => ['en' => 'World']]);
+
+        $client = new MockHttpClient(function (string $method, string $url, array $options = []) use ($response, $expectedBody): ResponseInterface {
+            $this->assertJsonStringEqualsJsonString($expectedBody, $options['body']);
+
+            return $response;
+        });
+
+        $options = new OneSignalOptions();
+        $options->includeExternalUserIds(["example_user_id"]);
+
+        $transport = $this->createTransport($client);
+
+        $sentMessage = $transport->send(new PushMessage('Hello', 'World', $options));
+
+        $this->assertSame('b98881cc-1e94-4366-bbd9-db8f3429292b', $sentMessage->getMessageId());
+    }
 }
